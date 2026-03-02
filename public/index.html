@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cryptoployed — Get Paid in Crypto</title>
+  <script src="https://unpkg.com/@solana/web3.js@1.95.4/lib/index.iife.min.js"></script>
+  <style>
+    :root {
+      --bg: #080b12;
+      --surface: #0d1117;
+      --card: #111827;
+      --border: rgba(255,255,255,0.07);
+      --accent: #7c3aed;
+      --accent2: #06b6d4;
+      --green: #10b981;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --text: #f1f5f9;
+      --muted: #64748b;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background:var(--bg); color:var(--text); font-family:'Inter',-apple-system,sans-serif; min-height:100vh; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:#0d1117; }
+    ::-webkit-scrollbar-thumb { background:#1e2a3a; border-radius:3px; }
+
+    /* ── NAV ── */
+    nav {
+      position:sticky; top:0; z-index:100;
+      background:rgba(8,11,18,0.9); backdrop-filter:blur(20px);
+      border-bottom:1px solid var(--border);
+      padding:0 32px; height:64px;
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .nav-logo { font-size:20px; font-weight:800; letter-spacing:-0.5px; }
+    .nav-logo span { color:var(--accent); }
+    .nav-links { display:flex; gap:8px; align-items:center; }
+    .nav-btn {
+      padding:8px 16px; border-radius:8px; font-size:14px; font-weight:500;
+      cursor:pointer; transition:all 0.2s; border:none; font-family:inherit;
+    }
+    .nav-btn.ghost { background:transparent; color:var(--muted); }
+    .nav-btn.ghost:hover { color:var(--text); background:rgba(255,255,255,0.05); }
+    .nav-btn.primary { background:var(--accent); color:#fff; }
+    .nav-btn.primary:hover { background:#6d28d9; box-shadow:0 0 20px rgba(124,58,237,0.4); }
+    .nav-btn.wallet { background:rgba(124,58,237,0.15); color:#a78bfa; border:1px solid rgba(124,58,237,0.3); }
+    .nav-btn.wallet:hover { background:rgba(124,58,237,0.25); }
+    .nav-btn.wallet.connected { background:rgba(16,185,129,0.15); color:#34d399; border-color:rgba(16,185,129,0.3); }
+
+    /* ── HERO ── */
+    .hero {
+      padding:80px 32px 60px;
+      text-align:center;
+      background:radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124,58,237,0.15), transparent);
+    }
+    .hero-badge {
+      display:inline-flex; align-items:center; gap:6px;
+      background:rgba(124,58,237,0.1); border:1px solid rgba(124,58,237,0.3);
+      border-radius:100px; padding:6px 14px; font-size:13px; color:#a78bfa;
+      margin-bottom:24px;
+    }
+    .hero h1 { font-size:clamp(36px,6vw,72px); font-weight:800; line-height:1.1; letter-spacing:-2px; margin-bottom:20px; }
+    .hero h1 span { background:linear-gradient(135deg,#7c3aed,#06b6d4); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .hero p { font-size:18px; color:var(--muted); max-width:560px; margin:0 auto 36px; line-height:1.7; }
+    .hero-ctas { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .btn-lg {
+      padding:14px 28px; border-radius:12px; font-size:16px; font-weight:600;
+      cursor:pointer; transition:all 0.2s; border:none; font-family:inherit;
+    }
+    .btn-lg.primary { background:var(--accent); color:#fff; box-shadow:0 0 30px rgba(124,58,237,0.3); }
+    .btn-lg.primary:hover { transform:translateY(-2px); box-shadow:0 0 50px rgba(124,58,237,0.5); }
+    .btn-lg.secondary { background:rgba(255,255,255,0.05); color:var(--text); border:1px solid var(--border); }
+    .btn-lg.secondary:hover { background:rgba(255,255,255,0.08); transform:translateY(-2px); }
+
+    /* ── STATS ── */
+    .stats {
+      display:flex; gap:1px; background:var(--border);
+      border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+    }
+    .stat { flex:1; padding:28px; background:var(--bg); text-align:center; }
+    .stat-val { font-size:28px; font-weight:800; color:var(--text); }
+    .stat-val.purple { color:#a78bfa; }
+    .stat-val.cyan { color:#22d3ee; }
+    .stat-val.green { color:#34d399; }
+    .stat-lbl { font-size:13px; color:var(--muted); margin-top:4px; }
+
+    /* ── MAIN LAYOUT ── */
+    .main { display:grid; grid-template-columns:260px 1fr; gap:0; min-height:calc(100vh - 64px); }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      background:var(--surface); border-right:1px solid var(--border);
+      padding:24px 16px; position:sticky; top:64px; height:calc(100vh - 64px); overflow-y:auto;
+    }
+    .sidebar-section { margin-bottom:28px; }
+    .sidebar-label { font-size:11px; font-weight:600; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; margin-bottom:10px; padding:0 8px; }
+    .cat-btn {
+      width:100%; padding:10px 12px; border-radius:8px; border:none;
+      background:transparent; color:var(--muted); font-family:inherit; font-size:14px;
+      cursor:pointer; transition:all 0.15s; text-align:left;
+      display:flex; align-items:center; gap:10px;
+    }
+    .cat-btn:hover { background:rgba(255,255,255,0.05); color:var(--text); }
+    .cat-btn.active { background:rgba(124,58,237,0.15); color:#a78bfa; }
+    .cat-icon { font-size:16px; width:20px; text-align:center; }
+    .cat-count { margin-left:auto; font-size:11px; background:rgba(255,255,255,0.08); padding:2px 7px; border-radius:100px; }
+
+    /* filter pills */
+    .filter-group { display:flex; flex-direction:column; gap:4px; }
+    .filter-check { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:13px; color:var(--muted); }
+    .filter-check:hover { color:var(--text); }
+    .filter-check input { accent-color:var(--accent); width:14px; height:14px; }
+
+    /* ── FEED ── */
+    .feed { padding:24px 28px; }
+    .feed-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+    .feed-header h2 { font-size:20px; font-weight:700; }
+    .feed-controls { display:flex; gap:8px; align-items:center; }
+    .search-bar {
+      padding:9px 14px; background:var(--card); border:1px solid var(--border);
+      border-radius:10px; color:var(--text); font-family:inherit; font-size:14px;
+      width:220px; outline:none; transition:border-color 0.2s;
+    }
+    .search-bar:focus { border-color:rgba(124,58,237,0.5); }
+    .search-bar::placeholder { color:var(--muted); }
+    .sort-select {
+      padding:9px 12px; background:var(--card); border:1px solid var(--border);
+      border-radius:10px; color:var(--text); font-family:inherit; font-size:14px;
+      outline:none; cursor:pointer;
+    }
+
+    /* ── JOB CARD ── */
+    .jobs-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
+    .job-card {
+      background:var(--card); border:1px solid var(--border); border-radius:14px;
+      padding:20px; cursor:pointer; transition:all 0.2s; position:relative; overflow:hidden;
+    }
+    .job-card::before {
+      content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(124,58,237,0.05),transparent);
+      opacity:0; transition:opacity 0.2s;
+    }
+    .job-card:hover { border-color:rgba(124,58,237,0.4); transform:translateY(-2px); box-shadow:0 8px 30px rgba(0,0,0,0.3); }
+    .job-card:hover::before { opacity:1; }
+
+    .job-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px; }
+    .job-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+    .job-reward { text-align:right; }
+    .job-reward-amount { font-size:18px; font-weight:800; color:var(--green); }
+    .job-reward-currency { font-size:11px; color:var(--muted); }
+    .job-title { font-size:16px; font-weight:600; margin-bottom:6px; line-height:1.4; }
+    .job-desc { font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:14px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .job-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .tag { padding:4px 10px; border-radius:6px; font-size:11px; font-weight:500; }
+    .tag-cat { background:rgba(124,58,237,0.15); color:#a78bfa; }
+    .tag-diff { }
+    .tag-easy { background:rgba(16,185,129,0.15); color:#34d399; }
+    .tag-medium { background:rgba(245,158,11,0.15); color:#fbbf24; }
+    .tag-hard { background:rgba(239,68,68,0.15); color:#f87171; }
+    .job-time { margin-left:auto; font-size:11px; color:var(--muted); }
+    .job-poster { display:flex; align-items:center; gap:6px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+    .poster-avatar { width:22px; height:22px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; }
+    .poster-addr { font-size:11px; color:var(--muted); font-family:monospace; }
+    .poster-badge { margin-left:auto; }
+    .badge-verified { font-size:10px; color:var(--accent2); }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position:fixed; inset:0; z-index:200;
+      background:rgba(0,0,0,0.8); backdrop-filter:blur(8px);
+      display:none; align-items:center; justify-content:center; padding:20px;
+    }
+    .modal-overlay.show { display:flex; }
+    .modal {
+      background:var(--card); border:1px solid rgba(124,58,237,0.3);
+      border-radius:20px; width:100%; max-width:560px; max-height:90vh;
+      overflow-y:auto; animation:modal-in 0.25s ease-out;
+    }
+    @keyframes modal-in { from{transform:scale(0.95);opacity:0;} to{transform:scale(1);opacity:1;} }
+    .modal-header { padding:24px 24px 0; display:flex; align-items:flex-start; justify-content:space-between; }
+    .modal-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:4px; }
+    .modal-close:hover { color:var(--text); }
+    .modal-body { padding:24px; }
+    .modal-title { font-size:22px; font-weight:700; margin-bottom:6px; }
+    .modal-reward { font-size:32px; font-weight:800; color:var(--green); margin-bottom:20px; }
+    .modal-section { margin-bottom:20px; }
+    .modal-section-label { font-size:12px; font-weight:600; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+    .modal-section-text { font-size:14px; color:var(--text); line-height:1.7; }
+    .modal-tags { display:flex; gap:8px; flex-wrap:wrap; }
+
+    /* form */
+    .form-group { margin-bottom:16px; }
+    .form-label { font-size:13px; font-weight:500; color:var(--muted); margin-bottom:6px; display:block; }
+    .form-input, .form-textarea, .form-select {
+      width:100%; padding:11px 14px; background:rgba(255,255,255,0.04);
+      border:1px solid var(--border); border-radius:10px; color:var(--text);
+      font-family:inherit; font-size:14px; outline:none; transition:border-color 0.2s;
+    }
+    .form-input:focus, .form-textarea:focus, .form-select:focus { border-color:rgba(124,58,237,0.5); }
+    .form-textarea { resize:vertical; min-height:100px; }
+    .form-select { cursor:pointer; }
+    .upload-zone {
+      border:2px dashed var(--border); border-radius:12px; padding:32px;
+      text-align:center; cursor:pointer; transition:all 0.2s; position:relative;
+    }
+    .upload-zone:hover { border-color:rgba(124,58,237,0.4); background:rgba(124,58,237,0.05); }
+    .upload-zone input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+    .upload-icon { font-size:32px; margin-bottom:8px; }
+    .upload-text { font-size:14px; color:var(--muted); }
+    .upload-text span { color:#a78bfa; }
+
+    .submit-btn {
+      width:100%; padding:14px; background:var(--accent); border:none; border-radius:12px;
+      color:#fff; font-family:inherit; font-size:16px; font-weight:600; cursor:pointer;
+      transition:all 0.2s; margin-top:8px;
+    }
+    .submit-btn:hover { background:#6d28d9; box-shadow:0 0 30px rgba(124,58,237,0.4); }
+    .submit-btn:disabled { opacity:0.5; cursor:not-allowed; }
+
+    /* ── POST JOB MODAL ── */
+    .reward-input-wrap { position:relative; }
+    .reward-input-wrap .form-input { padding-right:60px; }
+    .currency-badge { position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:13px; font-weight:600; color:#a78bfa; }
+
+    /* ── ESCROW INFO ── */
+    .escrow-box {
+      background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2);
+      border-radius:10px; padding:14px; margin-bottom:16px; font-size:13px;
+      color:#6ee7b7; line-height:1.6;
+    }
+    .escrow-box strong { color:#34d399; }
+
+    /* ── STATUS BADGES ── */
+    .status-badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:100px; font-size:11px; font-weight:600; }
+    .status-open { background:rgba(16,185,129,0.15); color:#34d399; }
+    .status-review { background:rgba(245,158,11,0.15); color:#fbbf24; }
+    .status-closed { background:rgba(100,116,139,0.15); color:#94a3b8; }
+
+    /* ── TOAST ── */
+    #toast {
+      position:fixed; bottom:24px; right:24px; z-index:500;
+      padding:14px 20px; border-radius:12px; font-size:14px; font-weight:500;
+      max-width:340px; opacity:0; transform:translateY(10px);
+      transition:all 0.3s; pointer-events:none;
+    }
+    #toast.show { opacity:1; transform:translateY(0); }
+    #toast.success { background:#064e3b; border:1px solid #065f46; color:#6ee7b7; }
+    #toast.error { background:#450a0a; border:1px solid #7f1d1d; color:#fca5a5; }
+    #toast.info { background:#1e1b4b; border:1px solid #312e81; color:#a5b4fc; }
+
+    /* ── AI VERIFY ── */
+    .verify-status { padding:14px; border-radius:10px; font-size:14px; margin-top:12px; display:none; }
+    .verify-status.checking { background:rgba(6,182,212,0.08); border:1px solid rgba(6,182,212,0.2); color:#67e8f9; display:block; }
+    .verify-status.approved { background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2); color:#6ee7b7; display:block; }
+    .verify-status.rejected { background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); color:#fca5a5; display:block; }
+    .verify-spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(6,182,212,0.3); border-top-color:#06b6d4; border-radius:50%; animation:spin 0.8s linear infinite; margin-right:8px; vertical-align:middle; }
+    @keyframes spin { to{transform:rotate(360deg);} }
+
+    /* ── EMPTY STATE ── */
+    .empty { text-align:center; padding:80px 20px; color:var(--muted); }
+    .empty-icon { font-size:48px; margin-bottom:16px; }
+    .empty h3 { font-size:18px; color:var(--text); margin-bottom:8px; }
+
+    /* ── MY JOBS TAB ── */
+    .tab-bar { display:flex; gap:4px; background:rgba(255,255,255,0.04); border-radius:10px; padding:4px; margin-bottom:24px; }
+    .tab { flex:1; padding:9px; text-align:center; border-radius:7px; font-size:14px; font-weight:500; cursor:pointer; transition:all 0.2s; color:var(--muted); border:none; background:none; font-family:inherit; }
+    .tab.active { background:var(--card); color:var(--text); box-shadow:0 1px 4px rgba(0,0,0,0.3); }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:768px) {
+      .main { grid-template-columns:1fr; }
+      .sidebar { display:none; }
+      .stats { flex-wrap:wrap; }
+      .stat { min-width:50%; }
+      .hero { padding:40px 20px 30px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">crypto<span>ployed</span></div>
+  <div class="nav-links">
+    <button class="nav-btn ghost" onclick="showTab('browse')">Browse Jobs</button>
+    <button class="nav-btn ghost" onclick="showTab('my-jobs')">My Jobs</button>
+    <button class="nav-btn wallet" id="wallet-btn" onclick="connectWallet()">👻 Connect Wallet</button>
+    <button class="nav-btn primary" onclick="openPostModal()">+ Post Job</button>
+  </div>
+</nav>
+
+<!-- HERO (shown on first load) -->
+<div id="hero-section">
+  <div class="hero">
+    <div class="hero-badge">🚀 No KYC · Instant Crypto Payments · AI Verified</div>
+    <h1>Get Paid in <span>Crypto</span><br/>For Real Work</h1>
+    <p>The open marketplace where anyone posts jobs, anyone works, and AI verifies every submission. Paid in SOL, USDC, ETH — instantly.</p>
+    <div class="hero-ctas">
+      <button class="btn-lg primary" onclick="showTab('browse')">Browse Jobs →</button>
+      <button class="btn-lg secondary" onclick="openPostModal()">Post a Job</button>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-val purple" id="stat-jobs">0</div><div class="stat-lbl">Active Jobs</div></div>
+    <div class="stat"><div class="stat-val cyan" id="stat-paid">$0</div><div class="stat-lbl">Total Paid Out</div></div>
+    <div class="stat"><div class="stat-val green" id="stat-completed">0</div><div class="stat-lbl">Completed</div></div>
+    <div class="stat"><div class="stat-val" id="stat-workers">0</div><div class="stat-lbl">Workers</div></div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="main" id="main-app" style="display:none">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Categories</div>
+      <button class="cat-btn active" onclick="filterCat('all', this)"><span class="cat-icon">🌐</span> All Jobs <span class="cat-count" id="cnt-all">0</span></button>
+      <button class="cat-btn" onclick="filterCat('development', this)"><span class="cat-icon">💻</span> Development <span class="cat-count" id="cnt-development">0</span></button>
+      <button class="cat-btn" onclick="filterCat('design', this)"><span class="cat-icon">🎨</span> Design <span class="cat-count" id="cnt-design">0</span></button>
+      <button class="cat-btn" onclick="filterCat('writing', this)"><span class="cat-icon">✍️</span> Writing <span class="cat-count" id="cnt-writing">0</span></button>
+      <button class="cat-btn" onclick="filterCat('marketing', this)"><span class="cat-icon">📣</span> Marketing <span class="cat-count" id="cnt-marketing">0</span></button>
+      <button class="cat-btn" onclick="filterCat('video', this)"><span class="cat-icon">🎬</span> Video <span class="cat-count" id="cnt-video">0</span></button>
+      <button class="cat-btn" onclick="filterCat('data', this)"><span class="cat-icon">📊</span> Data <span class="cat-count" id="cnt-data">0</span></button>
+      <button class="cat-btn" onclick="filterCat('other', this)"><span class="cat-icon">⚡</span> Other <span class="cat-count" id="cnt-other">0</span></button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Difficulty</div>
+      <div class="filter-group">
+        <label class="filter-check"><input type="checkbox" checked onchange="updateFilters()"> <span style="color:#34d399">●</span> Easy</label>
+        <label class="filter-check"><input type="checkbox" checked onchange="updateFilters()"> <span style="color:#fbbf24">●</span> Medium</label>
+        <label class="filter-check"><input type="checkbox" checked onchange="updateFilters()"> <span style="color:#f87171">●</span> Hard</label>
+      </div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Currency</div>
+      <div class="filter-group">
+        <label class="filter-check"><input type="checkbox" checked onchange="updateFilters()"> SOL</label>
+        <label class="filter-check"><input type="checkbox" checked onchange="updateFilters()"> USDC</label>
+        <label class="filter-check"><input type="checkbox" checked onchange="updateFilters()"> ETH</label>
+      </div>
+    </div>
+  </aside>
+
+  <!-- FEED -->
+  <div class="feed" id="feed-area">
+    <div class="feed-header">
+      <h2 id="feed-title">All Jobs</h2>
+      <div class="feed-controls">
+        <input class="search-bar" placeholder="🔍  Search jobs..." oninput="searchJobs(this.value)"/>
+        <select class="sort-select" onchange="sortJobs(this.value)">
+          <option value="newest">Newest</option>
+          <option value="reward-high">Highest Reward</option>
+          <option value="reward-low">Lowest Reward</option>
+          <option value="easy">Easiest First</option>
+        </select>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <button class="tab active" onclick="switchFeedTab('open',this)">🟢 Open</button>
+      <button class="tab" onclick="switchFeedTab('in-review',this)">🟡 In Review</button>
+      <button class="tab" onclick="switchFeedTab('completed',this)">✅ Completed</button>
+    </div>
+    <div class="jobs-grid" id="jobs-grid"></div>
+  </div>
+</div>
+
+<!-- ── JOB DETAIL MODAL ── -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:4px" id="dm-cat"></div>
+        <div class="modal-title" id="dm-title"></div>
+        <div class="modal-reward" id="dm-reward"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('detail-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-label">Description</div>
+        <div class="modal-section-text" id="dm-desc"></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Requirements</div>
+        <div class="modal-section-text" id="dm-req"></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Tags</div>
+        <div class="modal-tags" id="dm-tags"></div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-label">Posted by</div>
+        <div style="font-family:monospace;font-size:13px;color:var(--muted)" id="dm-poster"></div>
+      </div>
+      <div class="escrow-box">
+        💰 <strong>Funds in escrow.</strong> The reward is locked on-chain. Once your work is AI-verified and approved, payment is sent to your wallet automatically.
+      </div>
+      <!-- SUBMIT WORK FORM -->
+      <div id="submit-section">
+        <div class="modal-section-label">Submit Your Work</div>
+        <div class="form-group">
+          <label class="form-label">Your Wallet Address (for payment)</label>
+          <input class="form-input" id="submit-wallet" placeholder="Your Solana wallet address" readonly/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description of work done</label>
+          <textarea class="form-textarea" id="submit-desc" placeholder="Describe what you did, include links, proof of work..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Upload file (optional)</label>
+          <div class="upload-zone" id="upload-zone">
+            <input type="file" id="submit-file" onchange="handleFileSelect(this)"/>
+            <div class="upload-icon">📎</div>
+            <div class="upload-text">Drop file here or <span>browse</span></div>
+            <div id="file-name" style="font-size:12px;color:#a78bfa;margin-top:6px"></div>
+          </div>
+        </div>
+        <div class="verify-status" id="verify-status"></div>
+        <button class="submit-btn" id="submit-work-btn" onclick="submitWork()">Submit Work for AI Review</button>
+      </div>
+      <div id="already-submitted" style="display:none;text-align:center;padding:20px;color:var(--muted);font-size:14px">
+        ✅ You already submitted work for this job. Awaiting review.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── POST JOB MODAL ── -->
+<div class="modal-overlay" id="post-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Post a New Job</div>
+      <button class="modal-close" onclick="closeModal('post-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="escrow-box">
+        🔒 <strong>How it works:</strong> The reward is held in escrow when you post. Workers submit their work, AI reviews it, and payment releases automatically on approval. You only pay when work is done right.
+      </div>
+      <div class="form-group">
+        <label class="form-label">Job Title</label>
+        <input class="form-input" id="post-title" placeholder="e.g. Design a logo for my crypto project"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea class="form-textarea" id="post-desc" placeholder="Describe the job in detail. The more specific, the better the submissions you'll get."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Requirements (what counts as success)</label>
+        <textarea class="form-textarea" id="post-req" placeholder="What must the submission include to be approved? Be specific — AI uses this to verify work." style="min-height:80px"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-select" id="post-cat">
+            <option value="development">💻 Development</option>
+            <option value="design">🎨 Design</option>
+            <option value="writing">✍️ Writing</option>
+            <option value="marketing">📣 Marketing</option>
+            <option value="video">🎬 Video</option>
+            <option value="data">📊 Data</option>
+            <option value="other">⚡ Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Difficulty</label>
+          <select class="form-select" id="post-diff">
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Reward</label>
+          <div class="reward-input-wrap">
+            <input class="form-input" id="post-reward" type="number" step="0.01" min="0.01" placeholder="0.50"/>
+            <span class="currency-badge" id="reward-currency-badge">SOL</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Currency</label>
+          <select class="form-select" id="post-currency" onchange="document.getElementById('reward-currency-badge').textContent=this.value">
+            <option value="SOL">SOL</option>
+            <option value="USDC">USDC</option>
+          </select>
+        </div>
+      </div>
+      <button class="submit-btn" onclick="postJob()">🔒 Post Job & Lock Escrow</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let walletPubkey = null;
+let allJobs = [];
+let currentFilter = { cat: 'all', diffs: ['easy','medium','hard'], currencies: ['SOL','USDC','ETH'], search: '', status: 'open', sort: 'newest' };
+let activeJobId = null;
+
+// ═══════════════════════════════════════
+//  WALLET
+// ═══════════════════════════════════════
+async function connectWallet() {
+  const phantom = window.phantom?.solana || window.solana;
+  if (!phantom?.isPhantom) {
+    toast('Phantom wallet not found. Install it at phantom.app', 'error');
+    return;
+  }
+  try {
+    const resp = await phantom.connect();
+    walletPubkey = resp.publicKey.toString();
+    const btn = document.getElementById('wallet-btn');
+    btn.textContent = `${walletPubkey.slice(0,4)}...${walletPubkey.slice(-4)}`;
+    btn.classList.add('connected');
+    document.getElementById('submit-wallet').value = walletPubkey;
+    toast('Wallet connected!', 'success');
+  } catch(e) { toast('Wallet connection cancelled', 'error'); }
+}
+
+// ═══════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════
+function showTab(tab) {
+  document.getElementById('hero-section').style.display = 'none';
+  document.getElementById('main-app').style.display = 'grid';
+  loadJobs();
+}
+
+function switchFeedTab(status, btn) {
+  currentFilter.status = status;
+  document.querySelectorAll('.tab-bar .tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderJobs();
+}
+
+// ═══════════════════════════════════════
+//  JOBS API
+// ═══════════════════════════════════════
+async function loadJobs() {
+  try {
+    const r = await fetch('/api/jobs');
+    allJobs = await r.json();
+    updateCounts();
+    updateStats();
+    renderJobs();
+  } catch(e) {
+    // Demo mode with sample jobs
+    allJobs = getDemoJobs();
+    updateCounts();
+    updateStats();
+    renderJobs();
+  }
+}
+
+function getDemoJobs() {
+  return [
+    { id:'1', title:'Build a Solana Token Tracker', description:'Create a simple web app that tracks top Solana tokens by volume. Must include a live price feed and 24h chart.', requirements:'Working URL, SOL token list with prices, at least one chart. Must be mobile responsive.', category:'development', difficulty:'medium', reward:2.5, currency:'SOL', status:'open', poster:'8xKp...3mNq', postedAt: Date.now()-3600000, tags:['React','Solana','Web3'] },
+    { id:'2', title:'Write 5 Crypto Blog Articles', description:'Write 5 high-quality SEO-optimised articles about DeFi, NFTs, or Solana ecosystem. 1000 words each.', requirements:'5 articles, each 1000+ words, unique content, no AI-detectable text, delivered as Google Docs.', category:'writing', difficulty:'easy', reward:0.8, currency:'SOL', status:'open', poster:'4jRt...9vWx', postedAt: Date.now()-7200000, tags:['Writing','DeFi','SEO'] },
+    { id:'3', title:'Design a Memecoin Logo Pack', description:'Create a full brand pack for a memecoin: logo, banner, avatar, and 3 meme templates. Dark theme, fun vibe.', requirements:'PNG + SVG files, logo, Twitter banner, profile picture, 3 meme templates. Delivered as ZIP.', category:'design', difficulty:'medium', reward:1.2, currency:'SOL', status:'open', poster:'2mLp...7kZd', postedAt: Date.now()-1800000, tags:['Design','Branding','Meme'] },
+    { id:'4', title:'Scrape DEX Trading Data', description:'Script to scrape top 100 trading pairs from Raydium and Jupiter and output to CSV with volume, price, liquidity.', requirements:'Working Python or JS script. CSV output with: pair, price, 24h volume, liquidity. Runs without errors.', category:'data', difficulty:'easy', reward:0.5, currency:'SOL', status:'open', poster:'9nBq...1sCf', postedAt: Date.now()-900000, tags:['Python','Data','DeFi'] },
+    { id:'5', title:'Create a 60-second Crypto Explainer Video', description:'Animated explainer video covering "What is Solana?" — target audience is crypto beginners. Upbeat, clean, modern.', requirements:'60-second video, 1080p minimum, voiceover or text animation, MP4 format.', category:'video', difficulty:'hard', reward:3.0, currency:'SOL', status:'open', poster:'6hWm...4tPr', postedAt: Date.now()-5400000, tags:['Video','Animation','Education'] },
+    { id:'6', title:'Grow Twitter Account to 500 Followers', description:'Manage and grow a new crypto project Twitter account from 0 to 500 real followers in 30 days.', requirements:'500+ real followers (not bots), 30 days of consistent posting, DM screenshots as proof.', category:'marketing', difficulty:'hard', reward:1.5, currency:'SOL', status:'open', poster:'3kNs...8uTv', postedAt: Date.now()-10800000, tags:['Twitter','Growth','Marketing'] },
+  ];
+}
+
+function updateCounts() {
+  const cats = ['development','design','writing','marketing','video','data','other'];
+  const open = allJobs.filter(j => j.status === 'open');
+  document.getElementById('cnt-all').textContent = open.length;
+  cats.forEach(c => {
+    const el = document.getElementById(`cnt-${c}`);
+    if(el) el.textContent = open.filter(j => j.category === c).length;
+  });
+}
+
+function updateStats() {
+  document.getElementById('stat-jobs').textContent = allJobs.filter(j=>j.status==='open').length;
+  const completed = allJobs.filter(j=>j.status==='completed');
+  document.getElementById('stat-completed').textContent = completed.length;
+  const totalSol = completed.reduce((s,j)=>s+(j.currency==='SOL'?j.reward:0),0);
+  document.getElementById('stat-paid').textContent = totalSol.toFixed(1)+' SOL';
+  const workers = new Set(allJobs.filter(j=>j.worker).map(j=>j.worker)).size;
+  document.getElementById('stat-workers').textContent = workers || '—';
+}
+
+function renderJobs() {
+  const grid = document.getElementById('jobs-grid');
+  let jobs = allJobs.filter(j => {
+    if (j.status !== currentFilter.status) return false;
+    if (currentFilter.cat !== 'all' && j.category !== currentFilter.cat) return false;
+    if (!currentFilter.diffs.includes(j.difficulty)) return false;
+    if (!currentFilter.currencies.includes(j.currency)) return false;
+    if (currentFilter.search && !j.title.toLowerCase().includes(currentFilter.search.toLowerCase()) && !j.description.toLowerCase().includes(currentFilter.search.toLowerCase())) return false;
+    return true;
+  });
+
+  if (currentFilter.sort === 'reward-high') jobs.sort((a,b) => b.reward - a.reward);
+  else if (currentFilter.sort === 'reward-low') jobs.sort((a,b) => a.reward - b.reward);
+  else if (currentFilter.sort === 'easy') jobs.sort((a,b) => ['easy','medium','hard'].indexOf(a.difficulty) - ['easy','medium','hard'].indexOf(b.difficulty));
+  else jobs.sort((a,b) => b.postedAt - a.postedAt);
+
+  if (!jobs.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><h3>No jobs found</h3><p>Try adjusting your filters or check back soon.</p></div>`;
+    return;
+  }
+
+  const catIcons = { development:'💻', design:'🎨', writing:'✍️', marketing:'📣', video:'🎬', data:'📊', other:'⚡' };
+  const catColors = { development:'rgba(124,58,237,0.2)', design:'rgba(236,72,153,0.2)', writing:'rgba(6,182,212,0.2)', marketing:'rgba(245,158,11,0.2)', video:'rgba(239,68,68,0.2)', data:'rgba(16,185,129,0.2)', other:'rgba(100,116,139,0.2)' };
+
+  grid.innerHTML = jobs.map(j => `
+    <div class="job-card" onclick="openJob('${j.id}')">
+      <div class="job-top">
+        <div class="job-icon" style="background:${catColors[j.category]||catColors.other}">${catIcons[j.category]||'⚡'}</div>
+        <div class="job-reward">
+          <div class="job-reward-amount">${j.reward} ${j.currency}</div>
+          <div class="job-reward-currency">reward</div>
+        </div>
+      </div>
+      <div class="job-title">${j.title}</div>
+      <div class="job-desc">${j.description}</div>
+      <div class="job-meta">
+        <span class="tag tag-cat">${j.category}</span>
+        <span class="tag tag-diff tag-${j.difficulty}">${j.difficulty}</span>
+        ${j.tags ? j.tags.slice(0,2).map(t=>`<span class="tag" style="background:rgba(255,255,255,0.06);color:var(--muted)">${t}</span>`).join('') : ''}
+        <span class="job-time">${timeAgo(j.postedAt)}</span>
+      </div>
+      <div class="job-poster">
+        <div class="poster-avatar">${j.poster ? j.poster[0] : '?'}</div>
+        <div class="poster-addr">${j.poster || 'unknown'}</div>
+        <div class="poster-badge"><span class="badge-verified">✓ Escrow Locked</span></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════
+//  FILTERS
+// ═══════════════════════════════════════
+function filterCat(cat, btn) {
+  currentFilter.cat = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('feed-title').textContent = cat === 'all' ? 'All Jobs' : cat.charAt(0).toUpperCase()+cat.slice(1)+' Jobs';
+  renderJobs();
+}
+
+function updateFilters() {
+  const checks = document.querySelectorAll('.filter-check input');
+  currentFilter.diffs = [];
+  currentFilter.currencies = [];
+  const diffMap = ['Easy','Medium','Hard'];
+  const curMap = ['SOL','USDC','ETH'];
+  checks.forEach((c,i) => {
+    if(i < 3 && c.checked) currentFilter.diffs.push(diffMap[i].toLowerCase());
+    if(i >= 3 && c.checked) currentFilter.currencies.push(curMap[i-3]);
+  });
+  renderJobs();
+}
+
+function searchJobs(val) { currentFilter.search = val; renderJobs(); }
+function sortJobs(val) { currentFilter.sort = val; renderJobs(); }
+
+// ═══════════════════════════════════════
+//  JOB DETAIL
+// ═══════════════════════════════════════
+function openJob(id) {
+  const job = allJobs.find(j => j.id === id);
+  if (!job) return;
+  activeJobId = id;
+
+  document.getElementById('dm-cat').innerHTML = `<span class="status-badge status-${job.status === 'open' ? 'open' : job.status === 'in-review' ? 'review' : 'closed'}">● ${job.status}</span> &nbsp; ${job.category}`;
+  document.getElementById('dm-title').textContent = job.title;
+  document.getElementById('dm-reward').textContent = `${job.reward} ${job.currency}`;
+  document.getElementById('dm-desc').textContent = job.description;
+  document.getElementById('dm-req').textContent = job.requirements;
+  document.getElementById('dm-poster').textContent = job.poster;
+  document.getElementById('dm-tags').innerHTML = (job.tags||[]).map(t=>`<span class="tag tag-cat">${t}</span>`).join('');
+  document.getElementById('submit-wallet').value = walletPubkey || '';
+  document.getElementById('submit-desc').value = '';
+  document.getElementById('file-name').textContent = '';
+  document.getElementById('verify-status').className = 'verify-status';
+  document.getElementById('verify-status').textContent = '';
+
+  const canSubmit = job.status === 'open';
+  document.getElementById('submit-section').style.display = canSubmit ? 'block' : 'none';
+  document.getElementById('already-submitted').style.display = canSubmit ? 'none' : 'block';
+
+  document.getElementById('detail-modal').classList.add('show');
+}
+
+// ═══════════════════════════════════════
+//  SUBMIT WORK
+// ═══════════════════════════════════════
+let selectedFile = null;
+function handleFileSelect(input) {
+  selectedFile = input.files[0];
+  document.getElementById('file-name').textContent = selectedFile ? `📎 ${selectedFile.name}` : '';
+}
+
+async function submitWork() {
+  if (!walletPubkey) { toast('Connect your wallet first', 'error'); return; }
+  const desc = document.getElementById('submit-desc').value.trim();
+  if (!desc) { toast('Please describe your work', 'error'); return; }
+
+  const btn = document.getElementById('submit-work-btn');
+  btn.disabled = true;
+  btn.textContent = '🤖 AI is reviewing your work...';
+
+  const vs = document.getElementById('verify-status');
+  vs.className = 'verify-status checking';
+  vs.innerHTML = '<span class="verify-spinner"></span> AI is verifying your submission...';
+
+  try {
+    const form = new FormData();
+    form.append('jobId', activeJobId);
+    form.append('wallet', walletPubkey);
+    form.append('description', desc);
+    if (selectedFile) form.append('file', selectedFile);
+
+    const job = allJobs.find(j => j.id === activeJobId);
+    form.append('jobTitle', job?.title || '');
+    form.append('jobRequirements', job?.requirements || '');
+
+    const r = await fetch('/api/submit', { method:'POST', body: form });
+    const data = await r.json();
+
+    if (data.approved) {
+      vs.className = 'verify-status approved';
+      vs.innerHTML = `✅ <strong>Approved!</strong> ${data.feedback}<br/><br/>💰 <strong>${job.reward} ${job.currency}</strong> is being sent to your wallet...`;
+      toast(`✅ Work approved! ${job.reward} ${job.currency} sent to your wallet`, 'success');
+      // Mark job as completed locally
+      const idx = allJobs.findIndex(j => j.id === activeJobId);
+      if(idx>=0) { allJobs[idx].status = 'completed'; allJobs[idx].worker = walletPubkey; }
+      updateCounts(); updateStats(); renderJobs();
+      setTimeout(() => closeModal('detail-modal'), 3000);
+    } else {
+      vs.className = 'verify-status rejected';
+      vs.innerHTML = `❌ <strong>Not approved yet.</strong> ${data.feedback}`;
+      toast('Work not approved — see feedback above', 'error');
+    }
+  } catch(e) {
+    vs.className = 'verify-status rejected';
+    vs.innerHTML = `❌ Verification failed: ${e.message}`;
+    toast('Submission failed', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Submit Work for AI Review';
+  }
+}
+
+// ═══════════════════════════════════════
+//  POST JOB
+// ═══════════════════════════════════════
+function openPostModal() {
+  if (!walletPubkey) {
+    toast('Connect your wallet to post a job', 'info');
+    connectWallet();
+    return;
+  }
+  document.getElementById('post-modal').classList.add('show');
+}
+
+async function postJob() {
+  const title = document.getElementById('post-title').value.trim();
+  const desc = document.getElementById('post-desc').value.trim();
+  const req = document.getElementById('post-req').value.trim();
+  const reward = parseFloat(document.getElementById('post-reward').value);
+  const cat = document.getElementById('post-cat').value;
+  const diff = document.getElementById('post-diff').value;
+  const currency = document.getElementById('post-currency').value;
+
+  if (!title || !desc || !req || !reward) { toast('Please fill in all fields', 'error'); return; }
+  if (!walletPubkey) { toast('Connect wallet first', 'error'); return; }
+
+  const btn = document.querySelector('#post-modal .submit-btn');
+  btn.disabled = true; btn.textContent = '⏳ Locking escrow...';
+
+  try {
+    const r = await fetch('/api/jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, description:desc, requirements:req, reward, currency, category:cat, difficulty:diff, poster: `${walletPubkey.slice(0,4)}...${walletPubkey.slice(-4)}`, posterFull: walletPubkey }),
+    });
+    const job = await r.json();
+    allJobs.unshift(job);
+    updateCounts(); updateStats(); renderJobs();
+    closeModal('post-modal');
+    toast(`✅ Job posted! ${reward} ${currency} locked in escrow`, 'success');
+    ['post-title','post-desc','post-req','post-reward'].forEach(id => document.getElementById(id).value = '');
+  } catch(e) {
+    toast('Failed to post job: '+e.message, 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '🔒 Post Job & Lock Escrow';
+  }
+}
+
+// ═══════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('show'); }));
+
+function timeAgo(ts) {
+  const s = Math.floor((Date.now()-ts)/1000);
+  if(s<60) return `${s}s ago`;
+  if(s<3600) return `${Math.floor(s/60)}m ago`;
+  if(s<86400) return `${Math.floor(s/3600)}h ago`;
+  return `${Math.floor(s/86400)}d ago`;
+}
+
+function toast(msg, type='info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = `show ${type}`;
+  setTimeout(() => el.className = '', 4000);
+}
+</script>
+</body>
+</html>
