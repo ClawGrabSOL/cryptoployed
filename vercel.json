@@ -7,7 +7,11 @@
   "routes": [
     { "src": "/api/jobs", "dest": "/api/jobs.js" },
     { "src": "/api/submit", "dest": "/api/submit.js" },
-    { "src": "/logo.jpeg", "dest": "/public/logo.jpeg" },
+    { "src": "/logo.jpg", "dest": "/public/logo.jpg" },
+    { "src": "/logo.png", "dest": "/public/logo.png" },
+    { "src": "/(.*\\.png)", "dest": "/public/$1" },
+    { "src": "/(.*\\.jpg)", "dest": "/public/$1" },
+    { "src": "/(.*\\.ico)", "dest": "/public/$1" },
     { "src": "/(.*)", "dest": "/public/index.html" }
   ]
 }
